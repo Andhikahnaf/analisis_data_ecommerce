@@ -76,25 +76,21 @@ top_customers["recency"] = top_customers["max_order_timestamp"].apply(lambda x: 
 
 top_customers.drop("max_order_timestamp", axis=1, inplace=True)
 
+colors = ["#72BCD4", "#72BCD4", "#72BCD4", "#72BCD4", "#72BCD4"]
+
 fig, ax = plt.subplots(figsize=(10, 5))
-sns.barplot(x="recency", y="customer_id", data=top_customers.sort_values(by="recency", ascending=True).head(5), palette='Blues', ax=ax, orient='h')
+sns.barplot(x="recency", y="customer_id", data=top_customers.sort_values(by="recency", ascending=True).head(5), palette=colors, ax=ax)
 ax.set_title("Top Customers - Recency")
 st.pyplot(fig)
 
 fig, ax = plt.subplots(figsize=(10, 5))
-sns.barplot(x="frequency", y="customer_id", data=top_customers.sort_values(by="frequency", ascending=False).head(5), palette='Oranges', ax=ax, orient='h')
+sns.barplot(x="frequency", y="customer_id", data=top_customers.sort_values(by="frequency", ascending=False).head(5), palette=colors, ax=ax)
 ax.set_title("Top Customers - Frequency")
 st.pyplot(fig)
 
 fig, ax = plt.subplots(figsize=(10, 5))
-sns.barplot(x="monetary", y="customer_id", data=top_customers.sort_values(by="monetary", ascending=False).head(5), palette='Purples', ax=ax, orient='h')
+sns.barplot(x="monetary", y="customer_id", data=top_customers.sort_values(by="monetary", ascending=False).head(5), palette=colors, ax=ax)
 ax.set_title("Top Customers - Monetary")
-st.pyplot(fig)
-
-# Order Status Distribution
-st.subheader("📦 Order Status Distribution")
-fig, ax = plt.subplots(figsize=(8, 5))
-sns.countplot(y='order_status', data=filtered_df, order=filtered_df['order_status'].value_counts().index, palette='Blues')
 st.pyplot(fig)
 
 st.markdown("---")
