@@ -18,7 +18,7 @@ df = load_data()
 st.sidebar.header("Filters")
 selected_year = st.sidebar.selectbox("Select Year", ['All'] + sorted(df['year'].unique()), index=0)
 if selected_year == 'All':
-    filtered_df = df.copy()
+    filtered_df = df
     available_months = ['All'] + sorted(df['month'].unique())
 else:
     filtered_df = df[df['year'] == selected_year]
@@ -48,7 +48,7 @@ st.pyplot(fig)
 
 # Best & Least Sold Products
 st.subheader("🛍️ Top & Bottom Product Categories")
-category_sales = filtered_df.groupby('product_category_name_english')['product_id'].nunique().reset_index().sort_values(by='product_id', ascending=False)
+category_sales = filtered_df.groupby('product_category_name_english').product_id.count().reset_index().sort_values(by='product_id', ascending=False)
 
 fig, ax = plt.subplots(figsize=(10, 5))
 sns.barplot(y=category_sales['product_category_name_english'].head(5), x=category_sales['product_id'].head(5), ax=ax, palette='Greens')
@@ -62,25 +62,32 @@ st.pyplot(fig)
 
 # RFM Analysis (Top Customers)
 st.subheader("🏆 Top Customers Based on RFM")
-top_customers = filtered_df.groupby('customer_unique_id').agg(
-    recency=('order_purchase_timestamp', lambda x: (filtered_df['order_purchase_timestamp'].max() - x.max()).days),
-    frequency=('order_id', 'count'),
-    monetary=('total_order_value', 'sum')
-).reset_index()
-top_customers = top_customers.sort_values(by=['monetary', 'frequency', 'recency'], ascending=[False, False, False])
+top_customers = filtered_df.groupby('customer_id', as_index= False).agg({
+    'order_purchase_timestamp' : 'max',
+    'order_item_id': 'nunique',
+    'total_order_value': 'sum'
+})
+top_customers.columns = ["customer_id", "max_order_timestamp", "frequency", "monetary"]
+
+# menghitung kapan terakhir pelanggan melakukan transaksi (hari)
+top_customers["max_order_timestamp"] = top_customers["max_order_timestamp"].dt.date
+recent_date = filtered_df["order_purchase_timestamp"].dt.date.max()
+top_customers["recency"] = top_customers["max_order_timestamp"].apply(lambda x: (recent_date - x).days)
+
+top_customers.drop("max_order_timestamp", axis=1, inplace=True)
 
 fig, ax = plt.subplots(figsize=(10, 5))
-sns.barplot(y=top_customers['customer_unique_id'].head(5), x=top_customers['recency'].head(5), ax=ax, palette='Blues', orient='h')
+sns.barplot(x="recency", y="customer_id", data=top_customers.sort_values(by="recency", ascending=True).head(5), palette='Blues', ax=ax, orient='h')
 ax.set_title("Top Customers - Recency")
 st.pyplot(fig)
 
 fig, ax = plt.subplots(figsize=(10, 5))
-sns.barplot(y=top_customers['customer_unique_id'].head(5), x=top_customers['frequency'].head(5), ax=ax, palette='Oranges', orient='h')
+sns.barplot(x="frequency", y="customer_id", data=top_customers.sort_values(by="frequency", ascending=False).head(5), palette='Oranges', ax=ax, orient='h')
 ax.set_title("Top Customers - Frequency")
 st.pyplot(fig)
 
 fig, ax = plt.subplots(figsize=(10, 5))
-sns.barplot(y=top_customers['customer_unique_id'].head(5), x=top_customers['monetary'].head(5), ax=ax, palette='Purples', orient='h')
+sns.barplot(x="monetary", y="customer_id", data=top_customers.sort_values(by="monetary", ascending=False).head(5), palette='Purples', ax=ax, orient='h')
 ax.set_title("Top Customers - Monetary")
 st.pyplot(fig)
 
